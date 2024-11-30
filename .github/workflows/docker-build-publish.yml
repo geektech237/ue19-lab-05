@@ -1,4 +1,4 @@
-name: Build and Publish Docker Image
+name: Build, Scan, and Publish Docker Image
 
 on:
   push:
@@ -26,6 +26,15 @@ jobs:
     - name: Build Docker Image
       run: docker build . --file Dockerfile --tag ghcr.io/${{ github.repository }}/docker-app:latest
 
-    # Étape 4 : Pousser l'image vers GitHub Packages
+    # Étape 4 : Scanner les vulnérabilités avec Trivy
+    - name: Scan Docker Image with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ghcr.io/${{ github.repository }}/docker-app:latest
+        format: table # Format de sortie pour un affichage lisible
+        exit-code: 0  # Empêche l'échec si des vulnérabilités sont détectées (changer à 1 si nécessaire)
+        severity: HIGH,CRITICAL  # Seules les vulnérabilités critiques ou hautes sont affichées
+
+    # Étape 5 : Pousser l'image vers GitHub Packages
     - name: Push Docker Image to GitHub Packages
       run: docker push ghcr.io/${{ github.repository }}/docker-app:latest
